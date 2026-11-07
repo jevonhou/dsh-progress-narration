@@ -17,9 +17,13 @@
 
 ---
 
-## Usage
+## Why this plugin exists
 
-The plugin prompts the model to share short updates about what it finished, what it found, or what it plans to do next. The model decides when to post an update.
+During a long task, DeepSeek Harness may read several files and run several commands in a row. The conversation shows those actions as they happen, but you may have to wait for the next written response to learn how far it got or whether it found a problem.
+
+Progress Narration prompts the model to write a sentence or two along the way about what it finished, what it found, or what it plans to do next. The model decides when to post each update.
+
+## Usage
 
 Click the speech bubble to the right of the message box to choose how often to get updates. The icon reflects the current setting, and changes apply immediately. The circular arrow in the top right of the panel restores the default.
 
