@@ -2,9 +2,9 @@
   <img src="https://raw.githubusercontent.com/jevonhou/dsh-progress-narration/main/design/banner.png" alt="Progress narration for DeepSeek Harness" width="100%" />
 </p>
 
-<h1 align="center">过程播报 · dsh-progress-narration</h1>
+<h1 align="center">Progress Narration · dsh-progress-narration</h1>
 
-<p align="center"><strong>Prose progress updates while DeepSeek Harness works, instead of one long report at the end</strong></p>
+<p align="center"><strong>Short progress updates during long tasks in DeepSeek Harness.</strong></p>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/dsh-plugin-progress-narration"><img alt="npm" src="https://img.shields.io/npm/v/dsh-plugin-progress-narration?style=flat-square&color=cb3837"></a>
@@ -13,99 +13,54 @@
   <img alt="DeepSeek Harness" src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.2--rc.1%2B-111?style=flat-square">
 </p>
 
-<p align="center">English · [**中文**](README.md)</p>
+<p align="center">English · <a href="README.md">中文</a></p>
 
 ---
 
-## Why
+## Usage
 
-On a long task, DSH tends to run tools silently and then dump one long conclusion. All you see in between is a stream of reasoning, command and file-read rows.
+The plugin prompts the model to share short updates about what it finished, what it found, or what it plans to do next. The model decides when to post an update.
 
-This plugin makes it write a sentence or two at each stage: **what it just did, what it found, what comes next**. You can tell whether it is on track without waiting for the end.
+Click the speech bubble to the right of the message box to choose how often to get updates. The icon reflects the current setting, and changes apply immediately. The circular arrow in the top right of the panel restores the default.
 
-Codex gets a similar effect from its base prompt (`Intermediary updates`) and a dedicated commentary channel. DSH ships without that layer, so this plugin adds it.
-
-## What it does
-
-- A tone icon sits on the right of the composer and **shows the current density** (1 dot / 2 dots / 3 solid dots).
-- Clicking it opens a three-stop density slider that applies immediately:
-
-| Mode | Cadence |
+| Mode | Suggested frequency |
 |---|---|
-| 克制 (quiet) | Only before edits and at key turning points |
-| 标准 (standard, default) | Syncs progress every two or three steps |
-| 话多 (chatty) | One update per completed step |
+| Quiet (克制) | Before starting and at key points |
+| Standard (标准, default) | About every two or three steps |
+| Chatty (话多) | After each completed step when possible |
 
-- The circular arrow resets to the default mode.
-- Silence guard: after 6 / 3 / 2 consecutive tool-only steps (matching the mode), the plugin injects a short reminder into the next request.
+![Update frequency panel](https://raw.githubusercontent.com/jevonhou/dsh-progress-narration/main/design/slider-preview.png)
 
-![Panel](https://raw.githubusercontent.com/jevonhou/dsh-progress-narration/main/design/slider-preview.png)
+![Speech bubble icons for the three modes](https://raw.githubusercontent.com/jevonhou/dsh-progress-narration/main/design/trigger-icons.png)
 
-![Tone icons](https://raw.githubusercontent.com/jevonhou/dsh-progress-narration/main/design/trigger-icons.png)
+By default, reminders apply to the main agent only. More frequent updates generally use more output tokens.
 
 ## Install
 
-**Requires** DeepSeek Harness `0.2.2-rc.1` or newer. Verified on macOS; other platforms untested.
-
-### From npm (recommended)
+Requires DeepSeek Harness `0.2.2-rc.1` or newer. Tested on macOS. Other platforms have yet to be tested.
 
 1. Open **Settings → Plugins** and click **Add plugin**.
-2. Enter the package name: `dsh-plugin-progress-narration`
-3. Confirm that “过程播报” is enabled in the plugin list.
+2. Enter the npm package name `dsh-plugin-progress-narration` and follow the prompts.
+3. Return to a conversation and look for the dotted speech bubble to the right of the message box.
 
-### From GitHub
+The same dialog accepts the [GitHub repository URL](https://github.com/jevonhou/dsh-progress-narration) or the absolute path to a local checkout.
 
-1. Open **Settings → Plugins** and click **Add plugin**.
-2. Paste the repository URL: `https://github.com/jevonhou/dsh-progress-narration`
-3. Confirm that “过程播报” is enabled in the plugin list.
-
-Clone and paste the absolute path of the directory into the same field if you prefer a local install:
-
-```bash
-git clone https://github.com/jevonhou/dsh-progress-narration.git
-```
-
-> If GitHub times out, the install dialog offers a mirror registry.
-
-Verify: the plugin appears in the list and an uninstall entry exists under Settings → Plugins. Install verification details are in the Chinese README.
-
-## How it works
-
-**Host half** (`index.js`)
-
-- `narration:policy` — a standing system-prompt section explaining that prose is what the user sees, that reasoning is folded, and how often to speak.
-- `narration:silence` — runtime context that reads the session's derived history, counts consecutive tool-only assistant steps, and only injects a reminder once per threshold. Nothing is added while the model keeps narrating.
-- The policy section is static text, so it stays KV-cache friendly.
-
-**Client half** (`client.js`)
-
-- Registers `conversation.input.right` (composer icon) and `shell.overlay` (panel).
-- The panel reuses the official `MenuSurface` + `useAnchoredPosition`, and colours come from theme tokens, so light and dark themes both work.
-- Preferences are read and written through `configForms`; no fake user messages are injected.
-
-## Known limits
-
-- Prompting and reminders **raise the probability**, they do not guarantee it: the model may still stay silent in some turns.
-- Costs a small amount of output tokens; the chatty mode is more noticeable on long tasks.
-- Subagents are excluded, so team-internal chatter does not leak into your view.
-- Editing `client.js` requires **restarting Harness**: the Host caches client bundles by `rev`, so a page refresh may serve the old bundle — and a broken bundle makes the page fail to boot.
+To remove the plugin, open **Settings → Plugins → Progress narration** and choose **Uninstall**.
 
 ## Development
 
-Host + Client halves, plain JS, no dependencies, no build step.
+The plugin is written in JavaScript and runs directly in Harness without a build step.
 
 | File | Role |
 |---|---|
-| `index.js` | Prompt section, silence reminder, writable config schema |
-| `client.js` | Composer icon and density panel |
-| `cordis.patch.yml` | Plugin row |
-| `locale/` | Localized title and description |
-| `icon.svg` | Plugin icon (36×36) |
-| `design/` | Banner and README screenshots |
+| `index.js` | Progress prompts, reminders, and settings |
+| `client.js` | Speech bubble and update frequency panel |
+| `cordis.patch.yml` | Harness plugin registration |
+| `locale/` | English and Chinese names and descriptions |
 
-Styling note: Harness's global styles render corners as a squircle (`corner-shape`). When you want a real pill or circle, set `corner-shape: round` explicitly; otherwise `border-radius: 12px` produces a rounded rectangle.
+`index.js` counts consecutive steps in which the model only calls tools. When the count reaches 6, 3, or 2 in Quiet, Standard, or Chatty mode, respectively, the next model request includes a short reminder.
 
-Local loop: install the repository directory through **Add plugin**. After editing `client.js`, **a restart alone may not be enough**: the Host keys its client-script cache by the package directory's rev, and editing `client.js` does not change it, so the renderer keeps hitting the old response. Bump `package.json` (version is enough) or reinstall to force a refetch.
+For local development, enter the absolute path to the checkout in **Add plugin**. After editing `client.js`, restart Harness and check the interface. If it still shows the previous version, reinstall the local plugin and try again.
 
 ## License
 
