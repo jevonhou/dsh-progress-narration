@@ -107,15 +107,6 @@ window.__ModuleLoader__.load({
         transform: translateX(calc(var(--pnn-pos, 1) * -33.3333%));
       }
       .pnn-segPillText .pnn-segLabel { color: #fff; font-weight: 600; }
-      .pnn-star {
-        position: absolute; width: var(--pnn-star-size, 1.5px); height: var(--pnn-star-size, 1.5px);
-        margin: calc(var(--pnn-star-size, 1.5px) * -.5) 0 0 calc(var(--pnn-star-size, 1.5px) * -.5);
-        border-radius: 50%; background: #fff; pointer-events: none; z-index: 0;
-        opacity: .5;
-        animation-name: pnn-twinkle; animation-timing-function: ease-in-out;
-        animation-iteration-count: infinite; animation-direction: alternate;
-      }
-      @keyframes pnn-twinkle { from { opacity: .10; } to { opacity: .66; } }
       .pnn-head {
         display: flex; align-items: center; justify-content: space-between; gap: 10px;
         padding: 0; min-height: 20px; animation: pnn-caption-in .18s ease-out;
@@ -149,7 +140,6 @@ window.__ModuleLoader__.load({
 
       @media (prefers-reduced-motion: reduce) {
         .pnn-panel, .pnn-head { animation: none; }
-        .pnn-star { animation: none; opacity: .55; }
         .pnn-segPill, .pnn-reset { transition: none; }
       }
     `;
@@ -229,17 +219,6 @@ window.__ModuleLoader__.load({
           : null,
       );
     }
-
-    /** 胶囊内的星点：避开文字中线，各自错峰轻闪。 */
-    const STARS = [
-      { x: 13, y: 24, size: 1.4, duration: 3.1, delay: -0.2 },
-      { x: 26, y: 72, size: 1.2, duration: 4.3, delay: -1.6 },
-      { x: 38, y: 17, size: 1.6, duration: 3.7, delay: -2.4 },
-      { x: 66, y: 78, size: 1.3, duration: 3.4, delay: -1.1 },
-      { x: 78, y: 28, size: 1.5, duration: 4.0, delay: -3.3 },
-      { x: 21, y: 52, size: 1.0, duration: 4.8, delay: -0.4 },
-      { x: 82, y: 84, size: 1.0, duration: 5.8, delay: -2.6 },
-    ];
 
     /** 与 `.pnn-seg` 的 padding 保持一致，用于把指针位置换算成档位。 */
     const SEG_PAD = 3;
@@ -388,19 +367,6 @@ window.__ModuleLoader__.load({
         h(
           'div',
           { className: 'pnn-segPill', 'aria-hidden': 'true' },
-          STARS.map((star, order) =>
-            h('span', {
-              key: `star-${order}`,
-              className: 'pnn-star',
-              style: {
-                left: `${star.x}%`,
-                top: `${star.y}%`,
-                '--pnn-star-size': `${star.size}px`,
-                animationDuration: `${star.duration}s`,
-                animationDelay: `${star.delay}s`,
-              },
-            }),
-          ),
           h(
             'div',
             { className: 'pnn-segPillText' },
