@@ -68,12 +68,13 @@ window.__ModuleLoader__.load({
       }
       @keyframes pnn-in { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
       .pnn-seg {
-        --pnn-pill-fill: var(--dsw-static-deepseek-500, #4176E6);
+        --pnn-pill-fill: color-mix(in srgb, var(--dsw-alias-state-business-primary, #4176e6) 87%, var(--dsw-alias-label-primary, #111));
+        --pnn-pill-text: var(--dsw-alias-label-primary-foreground, #fff);
+        --pnn-pill-motion: transform .26s cubic-bezier(.3, 1.05, .5, 1);
         position: relative; display: flex; align-items: stretch;
         height: 34px; padding: 3px; box-sizing: border-box;
         border-radius: 999px; corner-shape: round;
         /* 与官方输入框「+」按钮同一灰：--dsw-specific-selector */
-        background: var(--dsw-alias-interactive-bg-active, rgba(38, 49, 72, .10));
         background: var(--dsw-specific-selector, rgba(38, 49, 72, .10));
         cursor: pointer; outline: none; touch-action: none;
         -webkit-user-select: none; user-select: none;
@@ -83,7 +84,7 @@ window.__ModuleLoader__.load({
         outline-offset: 3px;
       }
       .pnn-seg.pnn-dragging { cursor: grabbing; }
-      .pnn-segLabels { position: relative; display: flex; width: 100%; z-index: 0; }
+      .pnn-segments { position: relative; display: flex; width: 100%; }
       .pnn-segLabel {
         flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: center;
         font-size: 12px; line-height: 1; font-weight: 500;
@@ -91,27 +92,30 @@ window.__ModuleLoader__.load({
         white-space: nowrap; pointer-events: none;
       }
       .pnn-segPill {
-        position: absolute; top: 3px; bottom: 3px; left: 3px;
-        width: calc((100% - 6px) / 3);
+        position: absolute; inset: 0 auto 0 0;
+        width: calc(100% / var(--pnn-segments));
         border-radius: 999px; corner-shape: round; overflow: hidden;
         background: var(--pnn-pill-fill);
         box-shadow: 0 1px 2px rgba(0, 0, 0, .10);
-        transform: translateX(calc(var(--pnn-pos, 1) * 100%));
-        transition: transform .26s cubic-bezier(.3, 1.05, .5, 1);
-        will-change: transform;
+        transform: translateX(calc(var(--pnn-pos) * 100%));
+        transition: var(--pnn-pill-motion);
       }
-      .pnn-seg.pnn-dragging .pnn-segPill { transition: none; }
+      .pnn-seg.pnn-dragging { --pnn-pill-motion: none; }
       .pnn-segPillText {
-        position: absolute; top: 0; left: 0; width: 300%; height: 100%;
+        position: absolute; top: 0; left: 0; width: calc(100% * var(--pnn-segments)); height: 100%;
         display: flex; align-items: stretch; z-index: 1;
-        transform: translateX(calc(var(--pnn-pos, 1) * -33.3333%));
+        transform: translateX(calc(var(--pnn-pos) * -100% / var(--pnn-segments)));
+        transition: var(--pnn-pill-motion);
       }
-      .pnn-segPillText .pnn-segLabel { color: #fff; font-weight: 600; }
+      .pnn-segPillText .pnn-segLabel { color: var(--pnn-pill-text); font-weight: 600; }
       .pnn-head {
         display: flex; align-items: center; justify-content: space-between; gap: 10px;
-        padding: 0; min-height: 20px; animation: pnn-caption-in .18s ease-out;
+        padding: 0; min-height: 20px;
       }
-      .pnn-headMain { display: flex; align-items: center; gap: 7px; min-width: 0; }
+      .pnn-headMain {
+        display: flex; align-items: center; gap: 7px; min-width: 0;
+        animation: pnn-caption-in .18s ease-out;
+      }
       .pnn-headIcon {
         flex: none; display: inline-flex; align-items: center; justify-content: center;
         width: 18px; height: 18px;
@@ -130,17 +134,17 @@ window.__ModuleLoader__.load({
         background: transparent; color: var(--dsw-alias-label-secondary, #6b6b6b);
         cursor: pointer; transition: background .12s ease, color .12s ease, opacity .12s ease;
       }
-      .pnn-reset:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,.14)); color: var(--dsw-alias-label-primary, #111); }
+      .pnn-reset:enabled:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,.14)); color: var(--dsw-alias-label-primary, #111); }
       .pnn-reset:focus-visible {
         outline: var(--dsw-focus-ring-width, 2px) solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary, #3F77D8));
         outline-offset: 1px;
       }
-      .pnn-resetIdle { opacity: .38; cursor: default; }
-      .pnn-resetIdle:hover { background: transparent; color: var(--dsw-alias-label-secondary, #6b6b6b); }
+      .pnn-reset:disabled { opacity: .38; cursor: default; }
 
       @media (prefers-reduced-motion: reduce) {
-        .pnn-panel, .pnn-head { animation: none; }
-        .pnn-segPill, .pnn-reset { transition: none; }
+        .pnn-panel, .pnn-headMain { animation: none; }
+        .pnn-seg { --pnn-pill-motion: none; }
+        .pnn-reset { transition: none; }
       }
     `;
 
@@ -220,21 +224,19 @@ window.__ModuleLoader__.load({
       );
     }
 
-    /** 与 `.pnn-seg` 的 padding 保持一致，用于把指针位置换算成档位。 */
-    const SEG_PAD = 3;
-
     /**
      * 三档密度分段控件。
      * 拖动时只移动胶囊的视觉位置（不写入设置）；松手后吸附到最近一档，
      * 档位有变化才保存一次；取消拖动回到原档，不保存。点击与方向键仍然可用。
      */
-    function DensitySlider({ index, disabled, onChange }) {
-      const trackRef = useRef(null);
+    function DensitySlider({ index, disabled, onChange, trackRef }) {
+      const segmentsRef = useRef(null);
       const dragRef = useRef(null);
-      const [drag, setDrag] = useState(null);
+      const [preview, setPreview] = useState(null);
       const [settle, setSettle] = useState(null);
       const last = MODES.length - 1;
-      const position = drag !== null ? drag.pos : settle !== null ? settle : index;
+      const position = preview ?? settle ?? index;
+      const clamp = (value) => Math.min(Math.max(value, 0), last);
 
       /** 目标档位真正生效（或等待超时）后撤掉吸附态，避免视觉与实际档位长期不一致。 */
       useEffect(() => {
@@ -247,101 +249,88 @@ window.__ModuleLoader__.load({
         return () => clearTimeout(timer);
       }, [settle, index]);
 
-      /** 一档的宽度：胶囊宽度与每档位移都是它，不能按「内宽 / 档数-1」算。 */
-      const metrics = () => {
+      const finishDrag = (pointerId) => {
+        dragRef.current = null;
         const track = trackRef.current;
-        if (track === null) return null;
-        const rect = track.getBoundingClientRect();
-        const inner = Math.max(1, rect.width - SEG_PAD * 2);
-        return { rect, inner, step: inner / MODES.length };
-      };
-
-      const indexFromX = (clientX) => {
-        const m = metrics();
-        if (m === null) return index;
-        const raw = (clientX - m.rect.left - SEG_PAD) / m.step;
-        return Math.round(Math.min(Math.max(raw - 0.5, 0), last));
+        if (track?.hasPointerCapture(pointerId)) track.releasePointerCapture(pointerId);
+        setPreview(null);
       };
 
       const onKeyDown = (event) => {
-        if (disabled) return;
-        if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') {
-          event.preventDefault();
-          if (index > 0) onChange(index - 1);
-        } else if (event.key === 'ArrowRight' || event.key === 'ArrowUp') {
-          event.preventDefault();
-          if (index < last) onChange(index + 1);
-        } else if (event.key === 'Home') {
-          event.preventDefault();
-          onChange(0);
-        } else if (event.key === 'End') {
-          event.preventDefault();
-          onChange(last);
-        } else if (event.key === 'Escape' && dragRef.current !== null) {
-          // 拖动中按 Esc：撤掉手势预览，回到原档，不写入设置，也不关闭面板。
+        const active = dragRef.current;
+        if (event.key === 'Escape' && active !== null) {
           event.preventDefault();
           event.stopPropagation();
-          cancelDrag();
+          finishDrag(active.pointerId);
+          return;
         }
+        if (disabled) return;
+        let target;
+        switch (event.key) {
+          case 'ArrowLeft':
+          case 'ArrowDown': target = clamp(index - 1); break;
+          case 'ArrowRight':
+          case 'ArrowUp': target = clamp(index + 1); break;
+          case 'Home': target = 0; break;
+          case 'End': target = last; break;
+          default: return;
+        }
+        event.preventDefault();
+        if (active === null && target !== index) onChange(target);
       };
 
       const startDrag = (event) => {
-        if (disabled || event.button !== 0) return;
-        const track = trackRef.current;
-        if (track === null) return;
+        if (disabled || event.button !== 0 || dragRef.current !== null) return;
+        const track = event.currentTarget;
         event.preventDefault();
         track.focus({ preventScroll: true });
-        track.setPointerCapture?.(event.pointerId);
+        track.setPointerCapture(event.pointerId);
         dragRef.current = {
           startX: event.clientX,
           startPos: index,
           moved: false,
-          pos: index,
           pointerId: event.pointerId,
         };
         setSettle(null);
-        setDrag({ pos: index });
+        setPreview(index);
       };
+
+      const isDragMovement = (dx) => Math.abs(dx) > 3;
 
       const moveDrag = (event) => {
         const active = dragRef.current;
-        if (active === null) return;
-        const m = metrics();
-        if (m === null) return;
+        if (active?.pointerId !== event.pointerId) return;
         const dx = event.clientX - active.startX;
-        if (!active.moved && Math.abs(dx) > 3) active.moved = true;
-        active.pos = Math.min(Math.max(active.startPos + dx / m.step, 0), last);
-        setDrag({ pos: active.pos });
+        active.moved ||= isDragMovement(dx);
+        if (!active.moved) return;
+        const { width } = segmentsRef.current.getBoundingClientRect();
+        setPreview(clamp(active.startPos + dx / (width / MODES.length)));
       };
 
       const endDrag = (event) => {
         const active = dragRef.current;
-        if (active === null) return;
-        dragRef.current = null;
-        trackRef.current?.releasePointerCapture?.(event.pointerId);
-        const target = active.moved ? Math.round(active.pos) : indexFromX(event.clientX);
-        setDrag(null);
-        if (target === index) {
-          setSettle(null);
-          return;
-        }
+        if (active?.pointerId !== event.pointerId) return;
+        finishDrag(event.pointerId);
+        if (disabled) return;
+        const { left, width } = segmentsRef.current.getBoundingClientRect();
+        const step = width / MODES.length;
+        const dx = event.clientX - active.startX;
+        const target = active.moved || isDragMovement(dx)
+          ? Math.round(clamp(active.startPos + dx / step))
+          : clamp(Math.floor((event.clientX - left) / step));
+        if (target === index) return;
         setSettle(target);
         onChange(target);
       };
 
-      const cancelDrag = () => {
-        const active = dragRef.current;
-        if (active === null) return;
-        dragRef.current = null;
-        trackRef.current?.releasePointerCapture?.(active.pointerId);
-        setDrag(null);
-        setSettle(null);
+      const cancelDrag = (event) => {
+        if (dragRef.current?.pointerId === event.pointerId) finishDrag(event.pointerId);
       };
 
       return h(
         'div',
         {
-          className: `pnn-seg${drag !== null ? ' pnn-dragging' : ''}`,
+          className: `pnn-seg${preview !== null ? ' pnn-dragging' : ''}`,
           ref: trackRef,
           role: 'slider',
           tabIndex: disabled ? -1 : 0,
@@ -351,7 +340,7 @@ window.__ModuleLoader__.load({
           'aria-valuenow': index,
           'aria-valuetext': MODES[index].label,
           'aria-disabled': disabled ? 'true' : undefined,
-          style: { '--pnn-pos': String(position) },
+          style: { '--pnn-pos': String(position), '--pnn-segments': String(MODES.length) },
           onKeyDown,
           onPointerDown: startDrag,
           onPointerMove: moveDrag,
@@ -361,22 +350,23 @@ window.__ModuleLoader__.load({
         },
         h(
           'div',
-          { className: 'pnn-segLabels', 'aria-hidden': 'true' },
+          { className: 'pnn-segments', ref: segmentsRef, 'aria-hidden': 'true' },
           MODES.map((mode) => h('span', { key: mode.id, className: 'pnn-segLabel' }, mode.label)),
-        ),
-        h(
-          'div',
-          { className: 'pnn-segPill', 'aria-hidden': 'true' },
           h(
             'div',
-            { className: 'pnn-segPillText' },
-            MODES.map((mode) => h('span', { key: mode.id, className: 'pnn-segLabel' }, mode.label)),
+            { className: 'pnn-segPill' },
+            h(
+              'div',
+              { className: 'pnn-segPillText' },
+              MODES.map((mode) => h('span', { key: mode.id, className: 'pnn-segLabel' }, mode.label)),
+            ),
           ),
         ),
       );
     }
 
     function Trigger() {
+      const isOpen = useOpen();
       const config = useConfig();
       const mode = config === null ? 'balanced' : config.mode;
       const active = MODES.find((item) => item.id === mode) ?? MODES[1];
@@ -391,7 +381,7 @@ window.__ModuleLoader__.load({
           ...(tooltip === undefined || tooltip === null ? { title: label } : {}),
           'aria-label': label,
           'aria-haspopup': 'dialog',
-          'aria-expanded': open,
+          'aria-expanded': isOpen,
           onClick: () => setOpen(!open),
         },
         h(BubbleIcon, { kind: active.face, size: 16 }),
@@ -410,6 +400,7 @@ window.__ModuleLoader__.load({
       const isOpen = useOpen();
       const config = useConfig();
       const menuRef = useRef(null);
+      const sliderRef = useRef(null);
       const menuPos = primitives.useAnchoredPosition({
         open: isOpen,
         anchorRef: triggerRef,
@@ -419,6 +410,11 @@ window.__ModuleLoader__.load({
         gap: 8,
         margin: 12,
       });
+      const isPositioned = isOpen && menuPos != null;
+
+      useEffect(() => {
+        if (isPositioned) sliderRef.current?.focus({ preventScroll: true });
+      }, [isPositioned]);
 
       useEffect(() => {
         if (!isOpen) return undefined;
@@ -466,10 +462,10 @@ window.__ModuleLoader__.load({
             { className: 'pnn-panel' },
             h(
               'div',
-              { key: active.id, className: 'pnn-head' },
+              { className: 'pnn-head' },
               h(
                 'div',
-                { className: 'pnn-headMain' },
+                { key: active.id, className: 'pnn-headMain' },
                 h('span', { className: 'pnn-headIcon' }, h(BubbleIcon, { kind: active.face, size: 18 })),
                 h('p', { className: 'pnn-caption' }, active.caption),
               ),
@@ -477,11 +473,13 @@ window.__ModuleLoader__.load({
                 'button',
                 {
                   type: 'button',
-                  className: `pnn-reset${isDefault ? ' pnn-resetIdle' : ''}`,
+                  className: 'pnn-reset',
+                  disabled: isDefault || config === null,
                   title: '重置为默认',
                   'aria-label': '重置为默认',
                   onClick: () => {
-                    if (!isDefault) api?.write('mode', 'balanced');
+                    sliderRef.current?.focus({ preventScroll: true });
+                    api?.write('mode', 'balanced');
                   },
                 },
                 h(
@@ -504,6 +502,7 @@ window.__ModuleLoader__.load({
             ),
             h(DensitySlider, {
               index,
+              trackRef: sliderRef,
               disabled: config === null,
               onChange: (next) => api?.write('mode', MODES[next].id),
             }),

@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-progress-narration",
-  "version": "0.2.9",
+  "version": "0.2.10",
   "description": "让 DSH 干活时用正文报进度，而不是憋到最后一次性汇报 · A DeepSeek Harness plugin",
   "license": "MIT",
   "type": "module",
@@ -27,6 +27,7 @@
     "cordis.patch.yml",
     "locale/*.json",
     "icon.svg",
+    "DESIGN.md",
     "README.md",
     "LICENSE",
     "README.en.md"
