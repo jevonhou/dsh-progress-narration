@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/dsh-plugin-progress-narration"><img alt="npm" src="https://img.shields.io/npm/v/dsh-plugin-progress-narration?style=flat-square&color=cb3837"></a>
-  <a href="https://github.com/jevonhou/dsh-progress-narration/releases"><img alt="version" src="https://img.shields.io/badge/version-0.2.6-blue?style=flat-square"></a>
+  <a href="https://github.com/jevonhou/dsh-progress-narration/releases"><img alt="version" src="https://img.shields.io/badge/version-0.2.9-blue?style=flat-square"></a>
   <a href="LICENSE"><img alt="license" src="https://img.shields.io/badge/license-MIT-green?style=flat-square"></a>
   <img alt="DeepSeek Harness" src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.2--rc.1%2B-111?style=flat-square">
 </p>
