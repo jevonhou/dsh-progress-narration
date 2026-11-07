@@ -4,7 +4,7 @@
 
 <h1 align="center">Progress Narration · dsh-progress-narration</h1>
 
-<p align="center"><strong>Short progress updates during long tasks in DeepSeek Harness.</strong></p>
+<p align="center"><strong>Get quick updates from DSH while it works.</strong></p>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/dsh-plugin-progress-narration"><img alt="npm" src="https://img.shields.io/npm/v/dsh-plugin-progress-narration?style=flat-square&color=cb3837"></a>
@@ -17,11 +17,11 @@
 
 ---
 
-## Why this plugin exists
+## Why Progress Narration exists
 
-During a long task, DeepSeek Harness may read several files and run several commands in a row. The conversation shows those actions as they happen, but you may have to wait for the next written response to learn how far it got or whether it found a problem.
+I watched DSH run commands for five minutes without a word in the chat. The tool log kept scrolling. I could see it was still running, but I had no idea how far it had gotten.
 
-Progress Narration prompts the model to write a sentence or two along the way about what it finished, what it found, or what it plans to do next. The model decides when to post each update.
+Progress Narration nudges DSH to check in as it works. You might see “Found the problem. I’ll fix that first” or “The fix is in. I’ll run the tests now.”
 
 ## Usage
 

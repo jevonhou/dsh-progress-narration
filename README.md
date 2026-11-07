@@ -4,7 +4,7 @@
 
 <h1 align="center">过程播报 · dsh-progress-narration</h1>
 
-<p align="center"><strong>在 DeepSeek Harness 执行长任务时，用简短正文同步进度。</strong></p>
+<p align="center"><strong>让 DSH 边干活，边在对话里报个进度。</strong></p>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/dsh-plugin-progress-narration"><img alt="npm" src="https://img.shields.io/npm/v/dsh-plugin-progress-narration?style=flat-square&color=cb3837"></a>
@@ -17,11 +17,11 @@
 
 ---
 
-## 为什么需要
+## 为什么做「过程播报」
 
-长任务里，DeepSeek Harness 有时会连续读文件、跑命令。会话里一直有操作记录，你仍得等模型发下一条正文，才知道它做到哪一步、有没有发现问题。
+我看着 DSH 跑了五分钟命令，工具记录刷个不停，一句正文都没等到。我只知道它还在跑，完全不知道事情做到哪一步了。
 
-过程播报会提示模型在任务途中写一两句，说明刚完成了什么、发现了什么，或接下来要做什么。具体播报时机由模型决定。
+过程播报会提醒 DSH 在任务途中说两句。比如「找到问题了，我先修这儿」，或者「改好了，我跑一下测试」。
 
 ## 使用
 
