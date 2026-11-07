@@ -26,9 +26,6 @@ window.__ModuleLoader__.load({
     /** 宿主插件条目 id 的候选写法，取第一个就绪的。 */
     const ENTRY_IDS = ['progress-narration', 'include:progress-narration'];
 
-    /** 统一使用 Harness 的 business 蓝，随亮/暗主题自动适配。 */
-    const ACCENT = 'var(--dsw-alias-state-business-primary, #3F77D8)';
-
     const MODES = [
       { id: 'gentle', label: '克制', caption: '只在动手前和关键转折说一句', face: 'quiet' },
       { id: 'balanced', label: '标准', caption: '每两三步同步一次进度', face: 'calm' },
@@ -58,7 +55,7 @@ window.__ModuleLoader__.load({
         outline-offset: 1px;
       }
       .pnn-menu {
-        box-sizing: border-box; position: fixed; z-index: 1100; padding: 4px;
+        box-sizing: border-box; position: fixed; z-index: 1100; padding: 0;
         display: flex; flex-direction: column; width: max-content;
         --dsw-elevation-stroke-color: var(--dsw-alias-border-l1);
         box-shadow: var(--dsw-elevation-prominent);
@@ -67,75 +64,58 @@ window.__ModuleLoader__.load({
       .pnn-panel {
         display: flex; flex-direction: column; gap: 10px; padding: 16px 12px 14px;
         width: 280px; box-sizing: border-box; animation: pnn-in .16s ease-out;
+        background: var(--dsw-alias-bg-layer-2, #fff); border-radius: var(--dsw-radius-lg, 16px);
       }
       @keyframes pnn-in { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
-      .pnn-track {
-        position: relative; height: 34px; cursor: pointer; touch-action: none;
-        border-radius: 999px; outline: none;
+      .pnn-seg {
+        --pnn-pill-fill: var(--dsw-static-deepseek-500, #4176E6);
+        position: relative; display: flex; align-items: stretch;
+        height: 34px; padding: 3px; box-sizing: border-box;
+        border-radius: 999px; corner-shape: round;
+        /* 与官方输入框「+」按钮同一灰：--dsw-specific-selector */
+        background: var(--dsw-alias-interactive-bg-active, rgba(38, 49, 72, .10));
+        background: var(--dsw-specific-selector, rgba(38, 49, 72, .10));
+        cursor: pointer; outline: none; touch-action: none;
+        -webkit-user-select: none; user-select: none;
       }
-      .pnn-track:focus-visible {
+      .pnn-seg:focus-visible {
         outline: var(--dsw-focus-ring-width, 2px) solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary, #3F77D8));
         outline-offset: 3px;
       }
-      .pnn-rail {
-        position: absolute; left: 0; right: 0; top: 50%; height: 24px; margin-top: -12px;
-        border-radius: 12px; corner-shape: round; overflow: hidden;
-        background: var(--dsw-alias-state-business-primary, #3F77D8);
-        box-shadow: inset 0 1px 2px rgba(0, 0, 0, .10);
+      .pnn-seg.pnn-dragging { cursor: grabbing; }
+      .pnn-segLabels { position: relative; display: flex; width: 100%; z-index: 0; }
+      .pnn-segLabel {
+        flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: center;
+        font-size: 12px; line-height: 1; font-weight: 500;
+        color: var(--dsw-alias-label-secondary, #61666b);
+        white-space: nowrap; pointer-events: none;
       }
-      .pnn-stars {
-        position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-        background-repeat: repeat-x; background-size: 120px 100%;
-        animation: pnn-drift 26s linear infinite;
+      .pnn-segPill {
+        position: absolute; top: 3px; bottom: 3px; left: 3px;
+        width: calc((100% - 6px) / 3);
+        border-radius: 999px; corner-shape: round; overflow: hidden;
+        background: var(--pnn-pill-fill);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, .10);
+        transform: translateX(calc(var(--pnn-pos, 1) * 100%));
+        transition: transform .26s cubic-bezier(.3, 1.05, .5, 1);
+        will-change: transform;
       }
-      .pnn-stars-a {
-        background-image:
-          radial-gradient(1.4px 1.4px at 8px 30%, rgba(255,255,255,.85), transparent 60%),
-          radial-gradient(1.1px 1.1px at 34px 68%, rgba(255,255,255,.6), transparent 60%),
-          radial-gradient(1.6px 1.6px at 62px 40%, rgba(255,255,255,.75), transparent 60%),
-          radial-gradient(1px 1px at 88px 74%, rgba(255,255,255,.5), transparent 60%),
-          radial-gradient(1.2px 1.2px at 104px 24%, rgba(255,255,255,.65), transparent 60%);
-        animation: pnn-drift 34s linear infinite, pnn-twinkle 3.6s ease-in-out infinite alternate;
+      .pnn-seg.pnn-dragging .pnn-segPill { transition: none; }
+      .pnn-segPillText {
+        position: absolute; top: 0; left: 0; width: 300%; height: 100%;
+        display: flex; align-items: stretch; z-index: 1;
+        transform: translateX(calc(var(--pnn-pos, 1) * -33.3333%));
       }
-      .pnn-stars-b {
-        background-image:
-          radial-gradient(1.2px 1.2px at 18px 62%, rgba(255,255,255,.55), transparent 60%),
-          radial-gradient(1.5px 1.5px at 46px 26%, rgba(255,255,255,.7), transparent 60%),
-          radial-gradient(1px 1px at 72px 58%, rgba(255,255,255,.45), transparent 60%),
-          radial-gradient(1.3px 1.3px at 96px 36%, rgba(255,255,255,.6), transparent 60%);
-        animation: pnn-drift 48s linear infinite reverse, pnn-twinkle 5.2s ease-in-out infinite alternate-reverse;
+      .pnn-segPillText .pnn-segLabel { color: #fff; font-weight: 600; }
+      .pnn-star {
+        position: absolute; width: var(--pnn-star-size, 1.5px); height: var(--pnn-star-size, 1.5px);
+        margin: calc(var(--pnn-star-size, 1.5px) * -.5) 0 0 calc(var(--pnn-star-size, 1.5px) * -.5);
+        border-radius: 50%; background: #fff; pointer-events: none; z-index: 0;
+        opacity: .5;
+        animation-name: pnn-twinkle; animation-timing-function: ease-in-out;
+        animation-iteration-count: infinite; animation-direction: alternate;
       }
-      @keyframes pnn-drift { from { background-position-x: 0; } to { background-position-x: -240px; } }
-      @keyframes pnn-twinkle { from { opacity: .55; } to { opacity: 1; } }
-      .pnn-stop {
-        position: absolute; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px;
-        border-radius: 50%; background: rgba(255, 255, 255, .9);
-        box-shadow: 0 0 0 1px rgba(255, 255, 255, .12);
-        pointer-events: none;
-      }
-      .pnn-thumb {
-        position: absolute; top: 50%; width: 28px; height: 28px; margin: -14px 0 0 -14px;
-        border-radius: 50%; corner-shape: round; background: #fff;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, .18), 0 4px 12px rgba(0, 0, 0, .12);
-        transition: left .24s cubic-bezier(.3, 1.2, .5, 1), transform .16s ease, box-shadow .16s ease;
-      }
-      .pnn-track.pnn-dragging .pnn-thumb {
-        transition: transform .16s ease, box-shadow .16s ease;
-        transform: scale(.96); box-shadow: 0 2px 6px rgba(0, 0, 0, .2), 0 8px 18px rgba(0, 0, 0, .14);
-      }
-      @media (hover: hover) {
-        .pnn-track:hover .pnn-thumb { transform: scale(1.05); }
-        .pnn-track.pnn-dragging:hover .pnn-thumb { transform: scale(.96); }
-      }
-      .pnn-ticks {
-        position: relative; height: 18px;
-        font-size: 12px; line-height: 18px; color: var(--dsw-alias-label-tertiary, #8a8a8a);
-      }
-      .pnn-tick {
-        position: absolute; top: 0; transform: translateX(-50%);
-        white-space: nowrap; transition: color .16s ease;
-      }
-      .pnn-tickOn { color: var(--dsw-alias-label-primary, #111); font-weight: 500; }
+      @keyframes pnn-twinkle { from { opacity: .10; } to { opacity: .66; } }
       .pnn-head {
         display: flex; align-items: center; justify-content: space-between; gap: 10px;
         padding: 0; min-height: 20px; animation: pnn-caption-in .18s ease-out;
@@ -169,8 +149,8 @@ window.__ModuleLoader__.load({
 
       @media (prefers-reduced-motion: reduce) {
         .pnn-panel, .pnn-head { animation: none; }
-        .pnn-stars { animation: none; opacity: .7; }
-        .pnn-thumb, .pnn-tick, .pnn-reset { transition: none; }
+        .pnn-star { animation: none; opacity: .55; }
+        .pnn-segPill, .pnn-reset { transition: none; }
       }
     `;
 
@@ -250,22 +230,58 @@ window.__ModuleLoader__.load({
       );
     }
 
-    /** 三档密度滑轨：可点击、可拖动，方向键可调。 */
+    /** 胶囊内的星点：避开文字中线，各自错峰轻闪。 */
+    const STARS = [
+      { x: 13, y: 24, size: 1.4, duration: 3.1, delay: -0.2 },
+      { x: 26, y: 72, size: 1.2, duration: 4.3, delay: -1.6 },
+      { x: 38, y: 17, size: 1.6, duration: 3.7, delay: -2.4 },
+      { x: 66, y: 78, size: 1.3, duration: 3.4, delay: -1.1 },
+      { x: 78, y: 28, size: 1.5, duration: 4.0, delay: -3.3 },
+      { x: 21, y: 52, size: 1.0, duration: 4.8, delay: -0.4 },
+      { x: 82, y: 84, size: 1.0, duration: 5.8, delay: -2.6 },
+    ];
+
+    /** 与 `.pnn-seg` 的 padding 保持一致，用于把指针位置换算成档位。 */
+    const SEG_PAD = 3;
+
+    /**
+     * 三档密度分段控件。
+     * 拖动时只移动胶囊的视觉位置（不写入设置）；松手后吸附到最近一档，
+     * 档位有变化才保存一次；取消拖动回到原档，不保存。点击与方向键仍然可用。
+     */
     function DensitySlider({ index, disabled, onChange }) {
       const trackRef = useRef(null);
-      const [dragging, setDragging] = useState(false);
+      const dragRef = useRef(null);
+      const [drag, setDrag] = useState(null);
+      const [settle, setSettle] = useState(null);
       const last = MODES.length - 1;
-      const ratio = last === 0 ? 0 : index / last;
-      const INSET = 14;
+      const position = drag !== null ? drag.pos : settle !== null ? settle : index;
 
-      const pickFromX = (clientX) => {
+      /** 目标档位真正生效（或等待超时）后撤掉吸附态，避免视觉与实际档位长期不一致。 */
+      useEffect(() => {
+        if (settle === null) return undefined;
+        if (index === settle) {
+          setSettle(null);
+          return undefined;
+        }
+        const timer = setTimeout(() => setSettle(null), 800);
+        return () => clearTimeout(timer);
+      }, [settle, index]);
+
+      /** 一档的宽度：胶囊宽度与每档位移都是它，不能按「内宽 / 档数-1」算。 */
+      const metrics = () => {
         const track = trackRef.current;
-        if (track === null) return;
+        if (track === null) return null;
         const rect = track.getBoundingClientRect();
-        const inner = Math.max(1, rect.width - INSET * 2);
-        const offset = Math.min(Math.max(clientX - rect.left - INSET, 0), inner);
-        const next = Math.round((offset / inner) * last);
-        if (next !== index) onChange(next);
+        const inner = Math.max(1, rect.width - SEG_PAD * 2);
+        return { rect, inner, step: inner / MODES.length };
+      };
+
+      const indexFromX = (clientX) => {
+        const m = metrics();
+        if (m === null) return index;
+        const raw = (clientX - m.rect.left - SEG_PAD) / m.step;
+        return Math.round(Math.min(Math.max(raw - 0.5, 0), last));
       };
 
       const onKeyDown = (event) => {
@@ -282,15 +298,71 @@ window.__ModuleLoader__.load({
         } else if (event.key === 'End') {
           event.preventDefault();
           onChange(last);
+        } else if (event.key === 'Escape' && dragRef.current !== null) {
+          // 拖动中按 Esc：撤掉手势预览，回到原档，不写入设置，也不关闭面板。
+          event.preventDefault();
+          event.stopPropagation();
+          cancelDrag();
         }
       };
 
-      const position = (fraction) => `calc(${INSET}px + (100% - ${INSET * 2}px) * ${fraction})`;
+      const startDrag = (event) => {
+        if (disabled || event.button !== 0) return;
+        const track = trackRef.current;
+        if (track === null) return;
+        event.preventDefault();
+        track.focus({ preventScroll: true });
+        track.setPointerCapture?.(event.pointerId);
+        dragRef.current = {
+          startX: event.clientX,
+          startPos: index,
+          moved: false,
+          pos: index,
+          pointerId: event.pointerId,
+        };
+        setSettle(null);
+        setDrag({ pos: index });
+      };
+
+      const moveDrag = (event) => {
+        const active = dragRef.current;
+        if (active === null) return;
+        const m = metrics();
+        if (m === null) return;
+        const dx = event.clientX - active.startX;
+        if (!active.moved && Math.abs(dx) > 3) active.moved = true;
+        active.pos = Math.min(Math.max(active.startPos + dx / m.step, 0), last);
+        setDrag({ pos: active.pos });
+      };
+
+      const endDrag = (event) => {
+        const active = dragRef.current;
+        if (active === null) return;
+        dragRef.current = null;
+        trackRef.current?.releasePointerCapture?.(event.pointerId);
+        const target = active.moved ? Math.round(active.pos) : indexFromX(event.clientX);
+        setDrag(null);
+        if (target === index) {
+          setSettle(null);
+          return;
+        }
+        setSettle(target);
+        onChange(target);
+      };
+
+      const cancelDrag = () => {
+        const active = dragRef.current;
+        if (active === null) return;
+        dragRef.current = null;
+        trackRef.current?.releasePointerCapture?.(active.pointerId);
+        setDrag(null);
+        setSettle(null);
+      };
 
       return h(
         'div',
         {
-          className: `pnn-track${dragging ? ' pnn-dragging' : ''}`,
+          className: `pnn-seg${drag !== null ? ' pnn-dragging' : ''}`,
           ref: trackRef,
           role: 'slider',
           tabIndex: disabled ? -1 : 0,
@@ -300,37 +372,41 @@ window.__ModuleLoader__.load({
           'aria-valuenow': index,
           'aria-valuetext': MODES[index].label,
           'aria-disabled': disabled ? 'true' : undefined,
+          style: { '--pnn-pos': String(position) },
           onKeyDown,
-          onPointerDown: (event) => {
-            if (disabled) return;
-            setDragging(true);
-            event.currentTarget.setPointerCapture?.(event.pointerId);
-            pickFromX(event.clientX);
-          },
-          onPointerMove: (event) => {
-            if (!dragging) return;
-            pickFromX(event.clientX);
-          },
-          onPointerUp: (event) => {
-            setDragging(false);
-            event.currentTarget.releasePointerCapture?.(event.pointerId);
-          },
-          onPointerCancel: () => setDragging(false),
+          onPointerDown: startDrag,
+          onPointerMove: moveDrag,
+          onPointerUp: endDrag,
+          onPointerCancel: cancelDrag,
+          onLostPointerCapture: cancelDrag,
         },
         h(
           'div',
-          { className: 'pnn-rail' },
-          h('div', { className: 'pnn-stars pnn-stars-a' }),
-          h('div', { className: 'pnn-stars pnn-stars-b' }),
+          { className: 'pnn-segLabels', 'aria-hidden': 'true' },
+          MODES.map((mode) => h('span', { key: mode.id, className: 'pnn-segLabel' }, mode.label)),
         ),
-        MODES.map((mode, stop) =>
-          h('div', {
-            key: mode.id,
-            className: 'pnn-stop',
-            style: { left: position(last === 0 ? 0 : stop / last) },
-          }),
+        h(
+          'div',
+          { className: 'pnn-segPill', 'aria-hidden': 'true' },
+          STARS.map((star, order) =>
+            h('span', {
+              key: `star-${order}`,
+              className: 'pnn-star',
+              style: {
+                left: `${star.x}%`,
+                top: `${star.y}%`,
+                '--pnn-star-size': `${star.size}px`,
+                animationDuration: `${star.duration}s`,
+                animationDelay: `${star.delay}s`,
+              },
+            }),
+          ),
+          h(
+            'div',
+            { className: 'pnn-segPillText' },
+            MODES.map((mode) => h('span', { key: mode.id, className: 'pnn-segLabel' }, mode.label)),
+          ),
         ),
-        h('div', { className: 'pnn-thumb', style: { left: position(ratio) } }),
       );
     }
 
@@ -465,24 +541,6 @@ window.__ModuleLoader__.load({
               disabled: config === null,
               onChange: (next) => api?.write('mode', MODES[next].id),
             }),
-            h(
-              'div',
-              { className: 'pnn-ticks' },
-              MODES.map((mode, stop) =>
-                h(
-                  'span',
-                  {
-                    key: mode.id,
-                    className: `pnn-tick${stop === index ? ' pnn-tickOn' : ''}`,
-                    style: {
-                      left: `calc(14px + (100% - 28px) * ${stop / Math.max(1, MODES.length - 1)})`,
-                      ...(stop === index ? { color: ACCENT } : {}),
-                    },
-                  },
-                  h('span', null, mode.label),
-                ),
-              ),
-            ),
           ),
         ),
         document.body,
