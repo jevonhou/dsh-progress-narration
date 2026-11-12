@@ -16,8 +16,11 @@ window.__ModuleLoader__.load({
     }
     const ReactDOM = optional('react-dom');
     const primitives = optional('@deepseek-ai/dsh-client-ui-primitives') ?? {};
-    /** 菜单外壳与锚定都来自 primitives；缺失时保持惰性，不做半残的降级 UI。 */
-    if (typeof primitives.MenuSurface === 'undefined' || typeof primitives.useAnchoredPosition !== 'function') {
+    /**
+     * 菜单外壳来自 primitives；锚定 hook 在 0.2.2-rc.2 起不再导出，
+     * 由下面的本地实现兜底。外壳缺失时保持惰性，不做半残的降级 UI。
+     */
+    if (typeof primitives.MenuSurface === 'undefined') {
       return { inject: [], apply() {} };
     }
     const h = React.createElement;
@@ -150,6 +153,67 @@ window.__ModuleLoader__.load({
 
     /** 菜单未定位前的测量样式：不可见但参与布局。 */
     const MEASURE_STYLE = { visibility: 'hidden', left: 0, top: 0 };
+
+    /**
+     * 0.2.2-rc.2 移除了 primitives.useAnchoredPosition，MenuSurface 只当容器。
+     * 这里补回同等语义：贴着锚点、默认在它上方、空间不足时翻到下方，并收在视口内。
+     * 旧版宿主仍优先用官方 hook。
+     */
+    function useFallbackAnchorPosition({
+      open,
+      anchorRef,
+      panelRef,
+      side = 'top',
+      align = 'end',
+      gap = 8,
+      margin = 12,
+    }) {
+      const [position, setPosition] = useState(null);
+      useEffect(() => {
+        if (!open) {
+          setPosition(null);
+          return undefined;
+        }
+        let frame = 0;
+        const measure = () => {
+          const anchor = anchorRef.current;
+          if (anchor === null) return;
+          const rect = anchor.getBoundingClientRect();
+          const panel = panelRef.current;
+          const width = panel === null ? 0 : panel.offsetWidth;
+          const height = panel === null ? 0 : panel.offsetHeight;
+          const aligned = align === 'end'
+            ? rect.right - width
+            : align === 'start'
+              ? rect.left
+              : rect.left + rect.width / 2 - width / 2;
+          const left = Math.min(Math.max(margin, aligned), Math.max(margin, window.innerWidth - width - margin));
+          let top = side === 'top' ? rect.top - height - gap : rect.bottom + gap;
+          if (side === 'top' && top < margin && rect.bottom + gap + height <= window.innerHeight - margin) {
+            top = rect.bottom + gap;
+          }
+          if (side === 'bottom' && top + height > window.innerHeight - margin && rect.top - height - gap >= margin) {
+            top = rect.top - height - gap;
+          }
+          setPosition({ top, left });
+        };
+        measure();
+        frame = requestAnimationFrame(measure);
+        window.addEventListener('resize', measure);
+        window.addEventListener('scroll', measure, true);
+        return () => {
+          cancelAnimationFrame(frame);
+          window.removeEventListener('resize', measure);
+          window.removeEventListener('scroll', measure, true);
+        };
+      }, [open, side, align, gap, margin]);
+      return position;
+    }
+
+    /** 优先用宿主 export；rc.2 起回落到本地实现，hook 调用次数保持稳定。 */
+    const useAnchorPosition = typeof primitives.useAnchoredPosition === 'function'
+      ? primitives.useAnchoredPosition
+      : useFallbackAnchorPosition;
 
     /* ── 开合状态与锚点，输入框图标和浮层共用 ── */
     let open = false;
@@ -401,7 +465,7 @@ window.__ModuleLoader__.load({
       const config = useConfig();
       const menuRef = useRef(null);
       const sliderRef = useRef(null);
-      const menuPos = primitives.useAnchoredPosition({
+      const menuPos = useAnchorPosition({
         open: isOpen,
         anchorRef: triggerRef,
         panelRef: menuRef,
